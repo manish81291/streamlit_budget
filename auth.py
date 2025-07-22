@@ -75,6 +75,20 @@ class AuthManager:
             return True
         return False
     
+    def get_credentials(self,users):
+        credentials = {'usernames': {}}
+        # usernames = []
+        for user in users:
+            # usernames.append(user[1])
+            credentials['usernames'][user[1]] = {'name': user[0], 'password': user[2]}
+
+        return credentials
+    
+    def get_authenticatar(self,users):
+        credentials = self.get_credentials(users)           
+        Authenticator = stauth.Authenticate(credentials, cookie_name='Finfluencer', key='Finfluencer', cookie_expiry_days=4)
+        return Authenticator
+    
     def sign_up(self):
         with st.form(key='signup', clear_on_submit=True):
             st.subheader(':green[Sign Up]')
@@ -93,7 +107,7 @@ class AuthManager:
                                         if password1 == password2:
                                             # Add User to DB
                                             self.register_user(email, username, password1)
-                                            st.success('Account created successfully!!')
+                                            st.success('Account created successfully! Go to Login tab to Login!')
                                             st.balloons()
                                         else:
                                             st.warning('Passwords Do Not Match')
