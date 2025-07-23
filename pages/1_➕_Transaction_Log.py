@@ -1,15 +1,24 @@
 import streamlit as st
-from utils.expenseTracker import Account  
+from utils.budgetManager import Account  
 import time  
+from auth import AuthManager
 
+st.set_page_config(page_title='Finfluencer', page_icon='')
+st.logo('img/logo.png',size='large')
 
-if "logged_in" not in st.session_state or not st.session_state.logged_in:
+auth = AuthManager()
+users = auth.fetch_users()
+Authenticator = auth.get_authenticatar(users)
+Authenticator.login(location='unrendered',key='Login')
+if not st.session_state.get('authentication_status'):
     st.warning("Please log in to continue :)")
     st.stop()
 
-user_email = st.session_state.user_email
-db_name = f"{user_email}.db"  
-account = Account(db_name=db_name)
+Authenticator.logout(location='sidebar')
+
+
+username = st.session_state.username
+account = Account(username=username)
 
 
 

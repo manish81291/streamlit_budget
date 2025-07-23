@@ -12,8 +12,16 @@ auth = AuthManager()
 
 st.set_page_config(page_title='Finfluencer', page_icon='')
 st.logo('img/logo.png',size='large')
-# st.title("Finfluencer")
-# st.write("An AI powered budgeting app.")
+st.markdown("""
+        <style>
+               .block-container {
+                    padding-top: 0rem;
+                    padding-bottom: 0rem;
+                    padding-left: 0rem;
+                    padding-right: 0rem;
+                }
+        </style>
+        """, unsafe_allow_html=True)
 
 try:
 
@@ -42,10 +50,9 @@ try:
             with tab2:
                 auth.sign_up()
         else:
-            Authenticator.logout()
-            st.write(f'Welcome *{st.session_state.get("username")}*')
-            st.title('Some content')
-            st.subheader('This is the home page')
+            Authenticator.logout(location='sidebar')
+            st.header(f'Welcome  :green[*{st.session_state.get("username")}*] 👤',divider='gray')
+
 
 except Exception as ex:
     st.error(f"An error occurred: {ex}")

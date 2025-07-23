@@ -2,20 +2,20 @@ import sqlite3
 import pandas as pd
 import streamlit as st
 
-#expense manager class using db
+#Expense manager class using db
 class ExpenseManager:
 
-    
-
-    def __init__(self, db_name):
+    def __init__(self, username, db_name="expenses.db"):
 
         self.db_name = db_name
+        self.username = username
         self.conn = sqlite3.connect(self.db_name)
         self.cursor = self.conn.cursor()
 
         # Create the table if it doesn't exist
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS expenses (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                username TEXT,
                                 name TEXT,
                                 date DATE,
                                 amount REAL,
@@ -24,29 +24,31 @@ class ExpenseManager:
         self.conn.commit()
 
     def addExpense(self, date, name, amount, category, description): #WHAT IS THIS? :(
-        self.cursor.execute('''INSERT INTO expenses (name, date, amount, category, description)
-                               VALUES (?, ?, ?, ?, ?)''', 
-                               (name, date, amount, category, description))
+        self.cursor.execute('''INSERT INTO expenses (username, name, date, amount, category, description)
+                               VALUES (?, ?, ?, ?, ?, ?)''', 
+                               (self.username, name, date, amount, category, description))
         self.conn.commit()
 
     def viewExpenses(self):
-        query = "SELECT * FROM expenses"
+        query = "SELECT * FROM expenses where username='{}'".format(self.username)
         return pd.read_sql(query, self.conn)
 
-    def deleteExpense(self, expense_id):
-        self.cursor.execute("DELETE FROM expenses WHERE id=?", (expense_id,))
-        self.conn.commit()
+    # def deleteExpense(self, expense_id):
+    #     self.cursor.execute("DELETE FROM expenses WHERE id=?", (expense_id,))
+    #     self.conn.commit()
 
 
 class IncomeManager:
-    def __init__(self, db_name):
+    def __init__(self, username, db_name="income.db"):
         self.db_name = db_name
+        self.username = username
         self.conn = sqlite3.connect(self.db_name)
         self.cursor = self.conn.cursor()
 
         # Create the table if it doesn't exist
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS income (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                username TEXT,
                                 name TEXT,
                                 date DATE,
                                 amount REAL,
@@ -55,24 +57,24 @@ class IncomeManager:
         self.conn.commit()
 
     def addIncome(self, date, name, amount, source, description):
-        self.cursor.execute('''INSERT INTO income (name, date, amount, source, description)
-                               VALUES (?, ?, ?, ?, ?)''', 
-                               (name, date, amount, source, description))
+        self.cursor.execute('''INSERT INTO income (username, name, date, amount, source, description)
+                               VALUES (?, ?, ?, ?, ?, ?)''', 
+                               (self.username, name, date, amount, source, description))
         self.conn.commit()
 
     def viewIncome(self):
-        query = "SELECT * FROM income"
+        query = "SELECT * FROM income where username='{}'".format(self.username)
         return pd.read_sql(query, self.conn)
 
-    def deleteIncome(self, income_id):
-        self.cursor.execute("DELETE FROM income WHERE id=?", (income_id,))
-        self.conn.commit()
+    # def deleteIncome(self, income_id):
+    #     self.cursor.execute("DELETE FROM income WHERE id=?", (income_id,))
+    #     self.conn.commit()
 
 
 class Account:
-    def __init__(self, db_name):
-        self.IncomeManager = IncomeManager(db_name)
-        self.ExpenseManager = ExpenseManager(db_name)
+    def __init__(self, username):
+        self.IncomeManager = IncomeManager(username)
+        self.ExpenseManager = ExpenseManager(username)
         self.Balance = 0.0  
 
     def getBalance(self):
