@@ -2,6 +2,53 @@ import sqlite3
 import pandas as pd
 import streamlit as st
 
+class CategoryManager:
+
+    def __init__(self, username, db_name="category.db"):
+
+        self.db_name = db_name
+        self.username = username
+        self.conn = sqlite3.connect(self.db_name)
+        self.cursor = self.conn.cursor()
+
+        # Create the table if it doesn't exist
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS category (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                username TEXT,
+                                category_type TEXT,
+                                category TEXT)''')
+        
+        self.cursor.execute("SELECT * FROM category where username='admin'")
+
+        if self.cursor.fetchone() is None:
+            self.cursor.execute('''INSERT INTO category (username, category_type, category)
+                        VALUES (?, ?, ?)''', 
+                        ('admin', 'Cash In', 'Investment'))
+        
+            self.cursor.execute('''INSERT INTO category (username, category_type, category)
+                                VALUES (?, ?, ?)''', 
+                                ('admin', 'Cash In', 'Sales'))
+            
+            self.cursor.execute('''INSERT INTO category (username, category_type, category)
+                                VALUES (?, ?, ?)''', 
+                                ('admin', 'Cash Out', 'Rent'))
+            
+            self.cursor.execute('''INSERT INTO category (username, category_type, category)
+                                VALUES (?, ?, ?)''', 
+                                ('admin', 'Cash Out', 'Employee Salary'))        
+            self.conn.commit()
+
+
+    def addCategory(self, category_type, category): #WHAT IS THIS? :(
+        self.cursor.execute('''INSERT INTO category (username, category_type, category)
+                               VALUES (?, ?, ?)''', 
+                               (self.username, category_type, category))
+        self.conn.commit()
+
+    def viewCategory(self,category_type='Cash In'):
+        query = "SELECT username,category_type,category FROM category where username='{}' or username ='admin'".format(self.username,category_type)
+        return pd.read_sql(query, self.conn)
+    
 #Expense manager class using db
 class ExpenseManager:
 
@@ -16,21 +63,20 @@ class ExpenseManager:
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS expenses (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 username TEXT,
-                                name TEXT,
+                                category TEXT,
                                 date DATE,
                                 amount REAL,
-                                category TEXT,
                                 description TEXT)''')
         self.conn.commit()
 
-    def addExpense(self, date, name, amount, category, description): #WHAT IS THIS? :(
-        self.cursor.execute('''INSERT INTO expenses (username, name, date, amount, category, description)
-                               VALUES (?, ?, ?, ?, ?, ?)''', 
-                               (self.username, name, date, amount, category, description))
+    def addExpense(self, category, date, amount, description): #WHAT IS THIS? :(
+        self.cursor.execute('''INSERT INTO expenses (username, category, date, amount, description)
+                               VALUES (?, ?, ?, ?, ?)''', 
+                               (self.username, category, date, amount, description))
         self.conn.commit()
 
     def viewExpenses(self):
-        query = "SELECT * FROM expenses where username='{}'".format(self.username)
+        query = "SELECT category, date, amount, description FROM expenses where username='{}' order by date desc limit 10".format(self.username)
         return pd.read_sql(query, self.conn)
 
     # def deleteExpense(self, expense_id):
@@ -49,21 +95,20 @@ class IncomeManager:
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS income (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 username TEXT,
-                                name TEXT,
+                                category TEXT,
                                 date DATE,
                                 amount REAL,
-                                source TEXT,
                                 description TEXT)''')
         self.conn.commit()
 
-    def addIncome(self, date, name, amount, source, description):
-        self.cursor.execute('''INSERT INTO income (username, name, date, amount, source, description)
-                               VALUES (?, ?, ?, ?, ?, ?)''', 
-                               (self.username, name, date, amount, source, description))
+    def addIncome(self, category, date, amount, description):
+        self.cursor.execute('''INSERT INTO income (username, category, date, amount, description)
+                               VALUES (?, ?, ?, ?, ?)''', 
+                               (self.username, category, date, amount, description))
         self.conn.commit()
 
     def viewIncome(self):
-        query = "SELECT * FROM income where username='{}'".format(self.username)
+        query = "SELECT category, date, amount, description FROM income where username='{}' order by date desc limit 10".format(self.username)
         return pd.read_sql(query, self.conn)
 
     # def deleteIncome(self, income_id):
@@ -75,6 +120,7 @@ class Account:
     def __init__(self, username):
         self.IncomeManager = IncomeManager(username)
         self.ExpenseManager = ExpenseManager(username)
+        self.CategoryManager = CategoryManager(username)
         self.Balance = 0.0  
 
     def getBalance(self):
@@ -83,13 +129,13 @@ class Account:
         self.Balance = total_income - total_expense
         return self.Balance
 
-    def addExpense(self, date, name, amount, category, description):
-        self.ExpenseManager.addExpense(date, name, amount, category, description)
+    def addExpense(self, category, date, amount, description):
+        self.ExpenseManager.addExpense(category, date, amount, description)
         self.Balance -= amount
         st.success(f"Expense added successfully!")
 
-    def addIncome(self, date, name, amount, source, description):
-        self.IncomeManager.addIncome(date, name, amount, source, description)
+    def addIncome(self, category, date, amount, description):
+        self.IncomeManager.addIncome(category, date, amount, description)
         self.Balance += amount
         st.success(f"Income added successfully!")
 
@@ -98,6 +144,9 @@ class Account:
 
     def incomeList(self):
         return self.IncomeManager.viewIncome()
+    
+    def categoryList(self):
+        return self.CategoryManager.viewCategory()
 
     def deleteExpense(self, expense_id):
         expenses = self.ExpenseManager.viewExpenses()

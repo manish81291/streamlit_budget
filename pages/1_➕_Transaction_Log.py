@@ -45,53 +45,100 @@ st.badge(f"Current Balance: {formatted_balance}")
 # --- NAVIGATION MENU ---
 selected = option_menu(
     menu_title=None,
-    options=["Income", "Expenses"],
-    icons=["bi-arrow-down-left-circle-fill", "bi-arrow-up-right-circle-fill"],  # https://icons.getbootstrap.com/
+    options=["Cash In", "Cash Out","Add Category"],
+    icons=["bi-arrow-down-left-circle-fill", "bi-arrow-up-right-circle-fill","bi-plus-square-fill"],  # https://icons.getbootstrap.com/
     orientation="horizontal",
 )
 
-if selected == "Income":
-    st.subheader(':green[Income]')
-    with st.form("expense_form"):
-        exName = st.text_input("Expense Title")
-        exDate = st.date_input("Date Of Expense")
-        exAmount = st.number_input("Amount Spent", min_value=0.0)
-        exDes = st.text_area("Description")
-        exCategory = st.selectbox("Category of expense", ("-","Food 🍕", "Personal 👨 ", "Transport 🚌", "Investment 💱"))
-        submit_expense = st.form_submit_button("Add Expense ➕")
+df = account.categoryList()
 
-        if submit_expense:
-            account.addExpense(exDate, exName, exAmount, exCategory, exDes)
-            st.session_state.balance -= exAmount  # Deduct from balance
-            st.toast("✅ Expense Added Successfully!")
-            time.sleep(1.5)  # Delay for 1.5 seconds-IMPORTANT
-            st.rerun() 
+df_in = df[df['category_type'] == 'Cash In']
+df_out = df[df['category_type'] == 'Cash Out']
 
+df_income = account.incomeList()
+df_expense = account.expenseList()
 
 # --- PLOT PERIODS ---
-if selected == "Expenses":
-    st.subheader(':red[Expenses]')
+if selected == "Cash In":
+    st.subheader(':green[Cash In]')
     with st.form("income_form"):
-        InName = st.text_input("Income Title")
+        InCategory = st.selectbox("Source Of Income", df_in['category'].tolist())
         InDate = st.date_input("Income Date")
         InAmount = st.number_input("Amount Received", min_value=0.0)
         InDes = st.text_area("Description")
-        InSource = st.selectbox("Source Of Income", ("-","Salary 💳", "Family 👨 ", "Investment 💱", "Other"))
-        submit_income = st.form_submit_button("Add Income ➕")
+        submit_income = st.form_submit_button("Add Cash In ➕")
+
+        st.write(':green[Top 10 Recent Cash In Transactions]')
+        st.dataframe(df_income, use_container_width=True, hide_index=True)
        
         if submit_income:
-            account.addIncome(InDate, InName, InAmount, InSource, InDes)
+            account.addIncome(InCategory, InDate, InAmount, InDes)
             st.session_state.balance += InAmount  # Add to balance
             st.toast("✅ Income Added Successfully!")
             time.sleep(1.5)  
             st.rerun()  
+    
 
+if selected == "Cash Out":
+    st.subheader(':red[Cash Out]')
+    with st.form("expense_form"):
+        exCategory = st.selectbox("Category of expense", df_out['category'].tolist())
+        exDate = st.date_input("Date Of Expense")
+        exAmount = st.number_input("Amount Spent", min_value=0.0)
+        exDes = st.text_area("Description")
+        submit_expense = st.form_submit_button("Add Cash Out ➕")
 
+        st.write(':red[Top 10 Recent Cash Out Transactions]')
+        st.dataframe(df_expense, use_container_width=True, hide_index=True)
 
+        if submit_expense:
+            account.addExpense(exCategory, exDate, exAmount, exDes)
+            st.session_state.balance -= exAmount  # Deduct from balance
+            st.toast("✅ Expense Added Successfully!")
+            time.sleep(1.5)  # Delay for 1.5 seconds-IMPORTANT
+            st.rerun()
+    
 
+if selected == "Add Category":
 
+    df_in['category_new'] = df_in.category.apply(lambda x: ':green-badge['+x+']')
+    df_out['category_new'] = df_out.category.apply(lambda x: ':red-badge['+x+']')
 
+    tab1, tab2 = st.tabs(["Add Cash In Categories", "Add Cash Out Categories"])
 
+    with tab1:
+        st.markdown("Available Categories - "+" ".join(df_in.category_new.to_list()))
+        with st.form("add_category_form_in"):
+            category_name_in = st.text_input("Category Name")
+            submit_category_in = st.form_submit_button("Add Cash In Category ➕")
+
+            if submit_category_in:
+                if category_name_in:
+                    if category_name_in in df_in.category.values:
+                        st.warning(f"Category '{category_name_in}' already exists!")
+                    else:
+                        account.CategoryManager.addCategory('Cash In',category_name_in)
+                        st.success(f"Cash In Category '{category_name_in}' added successfully!")
+                        st.rerun()
+                else:
+                    st.warning("Please enter a category name.")
+
+    with tab2:
+        st.markdown("Available Categories - "+" ".join(df_out.category_new.to_list()))
+        with st.form("add_category_form_out"):
+            category_name_out = st.text_input("Category Name")
+            submit_category_out = st.form_submit_button("Add Cash Out Category ➕")
+
+            if submit_category_out:
+                if category_name_out:
+                    if category_name_out in df_out.category.values:
+                        st.warning(f"Category '{category_name_out}' already exists!")
+                    else:
+                        account.CategoryManager.addCategory('Cash Out',category_name_out)
+                        st.success(f"Cash Out Category '{category_name_out}' added successfully!")
+                        st.rerun()
+                else:
+                    st.warning("Please enter a category name.")
 
 
 
