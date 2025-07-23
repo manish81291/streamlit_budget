@@ -1,10 +1,10 @@
 import streamlit as st
-from utils.budgetManager import Account  
+from utils.accountManager import Account  
 import time  
 from auth import AuthManager
 from streamlit_option_menu import option_menu
 
-st.set_page_config(page_title='Finfluencer', page_icon='')
+st.set_page_config(page_title='Transactions', page_icon='')
 st.logo('img/logo.png',size='large')
 st.markdown("""
         <style>
@@ -22,7 +22,9 @@ users = auth.fetch_users()
 Authenticator = auth.get_authenticatar(users)
 Authenticator.login(location='unrendered',key='Login')
 if not st.session_state.get('authentication_status'):
-    st.warning("Please log in to continue :)")
+    st.toast("Please log in to continue! 😊, Redirecting to Login Page..")
+    time.sleep(2)
+    st.switch_page('Home.py')  # Redirect to Home page if not authenticated
     st.stop()
 
 Authenticator.logout(location='sidebar')
@@ -35,11 +37,8 @@ account = Account(username=username)
 
 st.header("💵 Log Transactions")
 st.divider()
-if "balance" not in st.session_state:
-    st.session_state.balance = account.getBalance()  # Fetch from database
 
-
-formatted_balance = f"₹{st.session_state.balance:.2f}"
+formatted_balance = f"₹{account.getBalance():.2f}"
 st.badge(f"Current Balance: {formatted_balance}")
 
 # --- NAVIGATION MENU ---

@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.budgetManager import Account  
+from utils.accountManager import Account  
 import time
 from auth import AuthManager
 

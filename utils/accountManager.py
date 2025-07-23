@@ -48,6 +48,74 @@ class CategoryManager:
     def viewCategory(self,category_type='Cash In'):
         query = "SELECT username,category_type,category FROM category where username='{}' or username ='admin'".format(self.username,category_type)
         return pd.read_sql(query, self.conn)
+
+class ProfileManager:
+
+    def __init__(self, username, db_name="profile.db"):
+
+        self.db_name = db_name
+        self.username = username
+        self.conn = sqlite3.connect(self.db_name)
+        self.cursor = self.conn.cursor()
+
+        # Create the table if it doesn't exist
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS profile (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                username TEXT UNIQUE,
+                                business_name TEXT,
+                                business_type TEXT,
+                                business_open_date DATE,
+                                business_size INTEGER,
+                                business_location TEXT)''')
+        self.conn.commit()
+
+    def addProfile(self, business_name, business_type,business_open_date,business_size,business_location): #WHAT IS THIS? :(
+        self.cursor.execute('''INSERT INTO profile (username, business_name, business_type,business_open_date,business_size,business_location)
+                               VALUES (?, ?, ?, ?, ?, ?)''', 
+                               (self.username, business_name, business_type,business_open_date,business_size,business_location))
+        self.conn.commit()
+
+    def updateProfile(self, business_name, business_type,business_open_date,business_size,business_location):
+        self.cursor.execute('''UPDATE profile SET business_name=?, business_type=?, business_open_date=?, business_size=?, business_location=? WHERE username=?''', 
+                               (business_name, business_type,business_open_date,business_size,business_location, self.username))
+        self.conn.commit()
+
+    def viewProfile(self):
+        query = "SELECT * FROM profile WHERE username='{}'".format(self.username)
+        return pd.read_sql(query, self.conn)
+
+class BudgetManager:
+
+    def __init__(self, username, db_name="budget.db"):
+
+        self.db_name = db_name
+        self.username = username
+        self.conn = sqlite3.connect(self.db_name)
+        self.cursor = self.conn.cursor()
+
+        # Create the table if it doesn't exist
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS budget (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                username TEXT UNIQUE,
+                                budget_str TEXT,
+                                short_term_goal TEXT,
+                                long_term_goal TEXT)''')
+        self.conn.commit()
+
+    def addBudget(self, budget_str, short_term_goal,long_term_goal): #WHAT IS THIS? :(
+        self.cursor.execute('''INSERT INTO budget (username, budget_str, short_term_goal,long_term_goal)
+                               VALUES (?, ?, ?, ?)''', 
+                               (self.username, budget_str, short_term_goal,long_term_goal))
+        self.conn.commit()
+
+    def updateBudget(self, budget_str, short_term_goal,long_term_goal):
+        self.cursor.execute('''UPDATE budget SET budget_str=?, short_term_goal=?, long_term_goal=? WHERE username=?''', 
+                               (budget_str, short_term_goal,long_term_goal, self.username))
+        self.conn.commit()  
+
+    def viewBudget(self):
+        query = "SELECT * FROM budget WHERE username='{}'".format(self.username)
+        return pd.read_sql(query, self.conn)
     
 #Expense manager class using db
 class ExpenseManager:
@@ -121,6 +189,8 @@ class Account:
         self.IncomeManager = IncomeManager(username)
         self.ExpenseManager = ExpenseManager(username)
         self.CategoryManager = CategoryManager(username)
+        self.ProfileManager = ProfileManager(username)
+        self.BudgetManager = BudgetManager(username)
         self.Balance = 0.0  
 
     def getBalance(self):

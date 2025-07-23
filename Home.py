@@ -52,6 +52,7 @@ try:
         else:
             Authenticator.logout(location='sidebar')
             st.header(f'Welcome  :green[*{st.session_state.get("username")}*] 👤',divider='gray')
+            
 
 
 except Exception as ex:
