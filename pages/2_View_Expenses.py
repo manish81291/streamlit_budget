@@ -5,6 +5,16 @@ from auth import AuthManager
 
 st.set_page_config(page_title='Finfluencer', page_icon='')
 st.logo('img/logo.png',size='large')
+st.markdown("""
+        <style>
+               .block-container {
+                    padding-top: 0rem;
+                    padding-bottom: 0rem;
+                    padding-left: 0rem;
+                    padding-right: 0rem;
+                }
+        </style>
+        """, unsafe_allow_html=True)
 
 auth = AuthManager()
 users = auth.fetch_users()
