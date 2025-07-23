@@ -14,6 +14,9 @@ st.markdown("""
                     padding-left: 0rem;
                     padding-right: 0rem;
                 }
+            h2 {
+                        padding: 0 !important;
+                }
         </style>
         """, unsafe_allow_html=True)
 
@@ -54,8 +57,8 @@ df = account.categoryList()
 df_in = df[df['category_type'] == 'Cash In']
 df_out = df[df['category_type'] == 'Cash Out']
 
-df_income = account.incomeList()
-df_expense = account.expenseList()
+df_income = account.incomeList().sort_values(by='date',ascending=False).head(10)
+df_expense = account.expenseList().sort_values(by='date',ascending=False).head(10)
 
 # --- PLOT PERIODS ---
 if selected == "Cash In":

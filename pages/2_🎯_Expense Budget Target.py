@@ -14,6 +14,9 @@ st.markdown("""
                     padding-left: 0rem;
                     padding-right: 0rem;
                 }
+            h2 {
+                        padding: 0 !important;
+                }
         </style>
         """, unsafe_allow_html=True)
 

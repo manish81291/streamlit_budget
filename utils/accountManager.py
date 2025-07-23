@@ -144,7 +144,7 @@ class ExpenseManager:
         self.conn.commit()
 
     def viewExpenses(self):
-        query = "SELECT category, date, amount, description FROM expenses where username='{}' order by date desc limit 10".format(self.username)
+        query = "SELECT category, date, amount, description FROM expenses where username='{}'".format(self.username)
         return pd.read_sql(query, self.conn)
 
     # def deleteExpense(self, expense_id):
@@ -176,7 +176,7 @@ class IncomeManager:
         self.conn.commit()
 
     def viewIncome(self):
-        query = "SELECT category, date, amount, description FROM income where username='{}' order by date desc limit 10".format(self.username)
+        query = "SELECT category, date, amount, description FROM income where username='{}'".format(self.username)
         return pd.read_sql(query, self.conn)
 
     # def deleteIncome(self, income_id):
