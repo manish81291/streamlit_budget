@@ -88,7 +88,7 @@ if selected == "Expense Budget Target":
             else:
                 account.BudgetManager.addBudget(str(budget_var), short_term_goal, long_term_goal)
             st.toast("✅ Budget updated successfully!")
-            time.sleep(1.5)  
+            time.sleep(2)  
             st.rerun()
 
 if selected == "Add Expense Category":

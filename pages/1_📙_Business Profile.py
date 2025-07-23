@@ -68,6 +68,6 @@ with st.form("profile_form"):
             account.ProfileManager.updateProfile(business_name, business_type, business_open_date, business_size, business_location)
         else:
             account.ProfileManager.addProfile(business_name, business_type, business_open_date, business_size, business_location)
-        st.success("Profile updated successfully!")
-        time.sleep(1.5)  
+        st.toast("✅ Profile updated successfully!")
+        time.sleep(2)  
         st.rerun()

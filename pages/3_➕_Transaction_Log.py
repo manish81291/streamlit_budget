@@ -74,7 +74,7 @@ if selected == "Cash In":
             account.addIncome(InCategory, InDate, InAmount, InDes)
             st.session_state.balance += InAmount  # Add to balance
             st.toast("✅ Income Added Successfully!")
-            time.sleep(1.5)  
+            time.sleep(2)  
             st.rerun()  
     
 
@@ -94,7 +94,7 @@ if selected == "Cash Out":
             account.addExpense(exCategory, exDate, exAmount, exDes)
             st.session_state.balance -= exAmount  # Deduct from balance
             st.toast("✅ Expense Added Successfully!")
-            time.sleep(1.5)  # Delay for 1.5 seconds-IMPORTANT
+            time.sleep(2)  # Delay for 2 seconds-IMPORTANT
             st.rerun()
     
 
@@ -117,7 +117,7 @@ if selected == "Add Category":
                         st.warning(f"Category '{category_name_in}' already exists!")
                     else:
                         account.CategoryManager.addCategory('Cash In',category_name_in)
-                        st.success(f"Cash In Category '{category_name_in}' added successfully!")
+                        st.toast(f"✅ Cash In Category '{category_name_in}' added successfully!")
                         st.rerun()
                 else:
                     st.warning("Please enter a category name.")
@@ -134,7 +134,7 @@ if selected == "Add Category":
                         st.warning(f"Category '{category_name_out}' already exists!")
                     else:
                         account.CategoryManager.addCategory('Cash Out',category_name_out)
-                        st.success(f"Cash Out Category '{category_name_out}' added successfully!")
+                        st.toast(f"✅ Cash Out Category '{category_name_out}' added successfully!")
                         st.rerun()
                 else:
                     st.warning("Please enter a category name.")
