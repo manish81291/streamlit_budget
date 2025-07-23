@@ -72,7 +72,6 @@ if selected == "Cash In":
        
         if submit_income:
             account.addIncome(InCategory, InDate, InAmount, InDes)
-            st.session_state.balance += InAmount  # Add to balance
             st.toast("✅ Income Added Successfully!")
             time.sleep(2)  
             st.rerun()  
@@ -92,7 +91,6 @@ if selected == "Cash Out":
 
         if submit_expense:
             account.addExpense(exCategory, exDate, exAmount, exDes)
-            st.session_state.balance -= exAmount  # Deduct from balance
             st.toast("✅ Expense Added Successfully!")
             time.sleep(2)  # Delay for 2 seconds-IMPORTANT
             st.rerun()

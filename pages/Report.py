@@ -4,7 +4,7 @@ import plotly.express as px
 import os
 from dotenv import load_dotenv
 import cohere
-from utils.expenseTracker import Account  
+from utils.accountManager import Account  
 from utils.finbot import get_budget_insights
 
 

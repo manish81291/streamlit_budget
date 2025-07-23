@@ -86,7 +86,7 @@ class AuthManager:
     
     def get_authenticatar(self,users):
         credentials = self.get_credentials(users)           
-        Authenticator = stauth.Authenticate(credentials, cookie_name='Finfluencer', key='Finfluencer', cookie_expiry_days=4)
+        Authenticator = stauth.Authenticate(credentials, cookie_name='Finfluencer', key='Finfluencer', cookie_expiry_days=1)
         return Authenticator
     
     def sign_up(self):
