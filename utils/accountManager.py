@@ -21,9 +21,6 @@ class CategoryManager:
         self.cursor.execute("SELECT * FROM category where username='admin'")
 
         if self.cursor.fetchone() is None:
-            self.cursor.execute('''INSERT INTO category (username, category_type, category)
-                        VALUES (?, ?, ?)''', 
-                        ('admin', 'Cash In', 'Investment'))
         
             self.cursor.execute('''INSERT INTO category (username, category_type, category)
                                 VALUES (?, ?, ?)''', 
@@ -35,7 +32,20 @@ class CategoryManager:
             
             self.cursor.execute('''INSERT INTO category (username, category_type, category)
                                 VALUES (?, ?, ?)''', 
-                                ('admin', 'Cash Out', 'Employee Salary'))        
+                                ('admin', 'Cash Out', 'Employee'))     
+
+            self.cursor.execute('''INSERT INTO category (username, category_type, category)
+                                VALUES (?, ?, ?)''', 
+                                ('admin', 'Cash Out', 'Utilities'))
+            
+            self.cursor.execute('''INSERT INTO category (username, category_type, category)
+                                VALUES (?, ?, ?)''', 
+                                ('admin', 'Cash Out', 'Marketing'))  
+
+            self.cursor.execute('''INSERT INTO category (username, category_type, category)
+                                VALUES (?, ?, ?)''', 
+                                ('admin', 'Cash Out', 'Miscellaneous'))
+
             self.conn.commit()
 
 

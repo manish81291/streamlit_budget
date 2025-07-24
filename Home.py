@@ -60,7 +60,7 @@ try:
                 auth.sign_up()
         else:
             Authenticator.logout(location='sidebar')
-            st.header(f'Welcome to Finfluenzer :green[*{st.session_state.get("username")}*] 👤 \n :orange[*An AI assisted budgeting and Literacy tool!*] 😊',divider='gray')
+            st.header(f'Welcome to Finfluenzer :green[*{st.session_state.get("username").capitalize()}*] 👤 \n :orange[*An AI assisted budgeting and Literacy tool!*] 😊',divider='gray')
 
             account = Account(username=st.session_state.get('username'))
             df_income = account.incomeList()
@@ -110,7 +110,6 @@ try:
                     pass
                     #calculate Monthly expense by category and see if ar espendign more than budget
                     
-
 
 
 
