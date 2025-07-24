@@ -28,6 +28,9 @@ st.markdown("""
                 h2 {
                         padding: 0 !important;
                 }
+                img {
+                    height: auto !important;
+                }
         </style>
         """, unsafe_allow_html=True)
 
