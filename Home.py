@@ -14,7 +14,7 @@ auth = AuthManager()
 
 # st.set_page_config(page_title='Finfluencer', page_icon='', initial_sidebar_state='collapsed')
 
-st.set_page_config(page_title='Finfluencer', page_icon='')
+st.set_page_config(page_title='FinFlow', page_icon='')
 st.logo('img/logo.png',size='large')
 st.markdown("""
         <style>
@@ -65,7 +65,7 @@ try:
                 auth.sign_up()
         else:
             Authenticator.logout(location='sidebar')
-            st.header(f'Welcome to Finfluenzer :green[*{st.session_state.get("username").capitalize()}*] 👤 \n :orange[*An AI assisted budgeting and Literacy tool!*] 😊',divider='gray')
+            st.header(f'Welcome to FinFlow :green[*{st.session_state.get("username").capitalize()}*] 👤 \n :orange[*An AI assisted budgeting and Literacy tool!*] 😊',divider='gray')
 
             account = Account(username=st.session_state.get('username'))
             df_income = account.incomeList()
