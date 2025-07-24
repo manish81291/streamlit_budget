@@ -7,9 +7,10 @@ from auth import AuthManager
 from utils.accountManager import Account
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+import numpy as np
 
 auth = AuthManager()
-
 
 # st.set_page_config(page_title='Finfluencer', page_icon='', initial_sidebar_state='collapsed')
 
@@ -22,6 +23,7 @@ st.markdown("""
                     padding-bottom: 0rem;
                     padding-left: 0rem;
                     padding-right: 0rem;
+                    max-width: 95%;
                 }
                 h2 {
                         padding: 0 !important;
@@ -83,7 +85,7 @@ try:
                     on="month",
                     how="outer"
                 ).fillna(0)
-                df.columns = ["month", "Income", "Expense"]
+                df.columns = ["month", "Cash In", "Cash Out"]
                 df["month_new"] = pd.to_datetime(df["month"], format='%b %Y')
 
                 df.sort_values(by='month_new', inplace=True)    
@@ -91,24 +93,131 @@ try:
                 fig = px.line(
                     df,
                     x="month",
-                    y=["Income", "Expense"],
+                    y=["Cash In", "Cash Out"],
                     title="Monthly Income vs Expense Trend",
                     markers=True
                 )
 
-                # add average dotted lines
-                avg_income = df["Income"].mean()
-                avg_expense = df["Expense"].mean()
+                # # add average dotted lines
+                # avg_income = df["Income"].mean()
+                # avg_expense = df["Expense"].mean()
 
-                fig.add_hline(y=avg_income, line_dash="dot", line_color="green", annotation_text="Avg Cash In", annotation_position="top left")
-                fig.add_hline(y=avg_expense, line_dash="dot", line_color="red", annotation_text="Avg Cash Out", annotation_position="top left")         
+                # fig.add_hline(y=avg_income, line_dash="dot", line_color="green", annotation_text="Avg Cash In", annotation_position="top left")
+                # fig.add_hline(y=avg_expense, line_dash="dot", line_color="red", annotation_text="Avg Cash Out", annotation_position="top left")         
+                # Calculate trendline using numpy (linear regression)
+                x = np.arange(len(df))  # Convert dates to numerical indices
+                y_inc = df['Cash In']
+                coeffs_inc = np.polyfit(x, y_inc, 1)  # Linear fit (degree=1)
+                trendline_inc = np.polyval(coeffs_inc, x)
 
+                y_exp = df['Cash Out']
+                coeffs_exp = np.polyfit(x, y_exp, 1)  # Linear fit (degree=1)
+                trendline_exp = np.polyval(coeffs_exp, x)
+
+                # Create the line plot
+                # fig = px.line(df, x='date', y='amount', title='Amount with Trendline')
+
+                # Add trendline to the plot
+                fig.add_trace(go.Scatter(x=df['month'], y=trendline_inc, mode='lines', name='Cash In Trendline', line=dict(dash='dot', color='green')))
+                fig.add_trace(go.Scatter(x=df['month'], y=trendline_exp, mode='lines', name='Cash Out Trendline', line=dict(dash='dot', color='red')))
+                
                 st.plotly_chart(fig)
 
                 budget = account.BudgetManager.viewBudget()
-                if not budget.empty:
-                    pass
-                    #calculate Monthly expense by category and see if ar espendign more than budget
+                # if not budget.empty:
+                #     pass
+                #     #calculate Monthly expense by category and see if ar espendign more than budget
+                    
+                if not df_expense.empty and not df_income.empty and not budget.empty:
+
+                    # Ensure proper datetime
+                    df_expense['date'] = pd.to_datetime(df_expense['date'])
+                    df_income['date'] = pd.to_datetime(df_income['date'])
+
+                    df_expense['month'] = df_expense['date'].dt.strftime('%b %Y')
+                    df_income['month'] = df_income['date'].dt.strftime('%b %Y')
+
+                    # Group income per month
+                    income_by_month = df_income.groupby("month")["amount"].sum().reset_index()
+                    income_by_month.columns = ["month", "Monthly Income"]
+
+                    # Parse user budget dict
+                    try:
+                        budget_dict = eval(budget.iloc[0]["budget_str"])
+                    except Exception:
+                        st.warning("⚠️ Could not parse budget data")
+                        budget_dict = {}
+
+                    # Dropdown for category
+                    all_categories = sorted(set(df_expense["category"]).union(budget_dict.keys()))
+                    selected_category = st.selectbox("📂 Select Expense Category", all_categories)
+
+                    # Actual expense per month for selected category
+                    actuals = df_expense[df_expense["category"] == selected_category]
+                    actuals_by_month = actuals.groupby("month")["amount"].sum().reset_index()
+                    actuals_by_month.columns = ["month", "Actual Expense"]
+
+                    # Budgeted = % of income
+                    percent = budget_dict.get(selected_category, 0)
+                    budgeted_by_month = income_by_month.copy()
+                    budgeted_by_month["Budgeted Expense"] = (budgeted_by_month["Monthly Income"] * percent) / 100
+                    budgeted_by_month = budgeted_by_month[["month", "Budgeted Expense"]]
+
+                    # Merge actual & budgeted
+                    comparison_df = pd.merge(budgeted_by_month, actuals_by_month, on="month", how="outer").fillna(0)
+                    comparison_df["month_dt"] = pd.to_datetime(comparison_df["month"], format="%b %Y")
+                    comparison_df.sort_values("month_dt", inplace=True)
+
+                    # Summary for selected category
+                    total_budget = comparison_df["Budgeted Expense"].sum()
+                    total_actual = comparison_df["Actual Expense"].sum()
+                    diff = total_actual - total_budget
+                    percent_diff = (diff / total_budget * 100) if total_budget > 0 else 0
+
+                    # 📝 Summary message
+                    st.markdown(f"""
+                    ### 📊 Summary for **{selected_category}**
+                    - 🔸 **Total Budgeted**: ₹{total_budget:,.2f}
+                    - 🔹 **Total Spent**: ₹{total_actual:,.2f}
+                    - {"🟢 Under budget" if diff < 0 else "🔴 Over budget"} by ₹{abs(diff):,.2f} ({percent_diff:+.1f}%)
+                    """)
+
+                    # Melt for plot
+                    melted = comparison_df.melt(id_vars="month", value_vars=["Budgeted Expense", "Actual Expense"])
+
+                    # Base line chart
+                    fig = px.line(
+                        melted,
+                        x="month",
+                        y="value",
+                        color="variable",
+                        markers=True,
+                        title=f"📈 Budget vs Actual for {selected_category}",
+                        labels={"value": "Amount (₹)", "month": "Month", "variable": "Type"},
+                        color_discrete_map={
+                            "Budgeted Expense": "orange",
+                            "Actual Expense": "blue"
+                        }
+                    )
+
+                    # 🔴 Highlight overspending months
+                    overspent = comparison_df[comparison_df["Actual Expense"] > comparison_df["Budgeted Expense"]]
+                    for _, row in overspent.iterrows():
+                        fig.add_annotation(
+                            x=row["month"],
+                            y=row["Actual Expense"],
+                            text="🔺 Over",
+                            showarrow=True,
+                            arrowhead=2,
+                            arrowsize=1,
+                            arrowcolor="red",
+                            font=dict(color="red", size=12),
+                            yshift=10
+                        )
+
+                    st.plotly_chart(fig, use_container_width=True)
+
+
                     
 
 
