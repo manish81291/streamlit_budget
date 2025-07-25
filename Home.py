@@ -5,12 +5,14 @@ import sqlite3
 import time
 from auth import AuthManager
 from utils.accountManager import Account
+from utils.finbot import FinFlowBot
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 
 auth = AuthManager()
+finbot = FinFlowBot()
 
 # st.set_page_config(page_title='Finfluencer', page_icon='', initial_sidebar_state='collapsed')
 
@@ -124,7 +126,33 @@ try:
                 fig.add_trace(go.Scatter(x=df['month'], y=trendline_inc, mode='lines', name='Cash In Trendline', line=dict(dash='dot', color='green')))
                 fig.add_trace(go.Scatter(x=df['month'], y=trendline_exp, mode='lines', name='Cash Out Trendline', line=dict(dash='dot', color='red')))
                 
-                st.plotly_chart(fig)
+                col1, col2 = st.columns([2,1])
+
+                with col1:
+                    st.plotly_chart(fig)
+
+                with col2:
+                    if st.button("💡Generate Insight"):
+                        with st.spinner("Thinking with Gemini..."):
+                            df_income_chat = account.incomeList()
+                            df_expense_chat = account.expenseList()
+
+                            parent_prompt = """I have monthly income ("Cash In") and expense ("Cash Out") data for the past 12 months.
+                            Here is the data:
+                            Cash In: {}
+                            Cash Out: {}
+
+                            """.format(df_income_chat.to_json(),df_expense_chat.to_json())
+
+                            summarise_prompt= parent_prompt+"""Please perform the following analysis:
+                            1.  Summarize in not more than 3 points, make sure there is no formatting issue"""
+
+
+
+                            response = finbot.call_ai(summarise_prompt)
+
+                            st.write(response.text)
+                
 
                 budget = account.BudgetManager.viewBudget()
                 # if not budget.empty:

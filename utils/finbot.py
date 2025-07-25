@@ -1,25 +1,50 @@
-from dotenv import load_dotenv
-import cohere
+from gtts import gTTS
+import streamlit as st
 import os
+import uuid
+import base64
+import streamlit.components.v1 as components
+from google import genai
 
-load_dotenv()
-api_key = os.getenv('COHERE_API_KEY')
-co = cohere.Client(api_key)
 
-def get_budget_insights(user_query, transactions_text):
-    prompt = f"""User query: {user_query}\nTransactions list: {transactions_text}\n
-    You are FinBot, a financial AI assistant developed by Sakshi & Shahu for the Finfluener budgeting app and Respond to the user in a single, well-structured paragraph, ensuring that all sentences are complete and coherent, without any breaks or cutoff.
-    Your job is **ONLY** to assist users with their **financial queries**, including budgeting, expense tracking, and savings advice. **DO NOT** answer anything that is unrelated to finance. If a user asks something outside finance, firmly respond with: 
-    "I can only assist with financial-related questions. Please ask me something about your finances."
-    If user asks about making changes his expenses or income to delete or add ,simply respond:""I can assist you with managing your finances, but I cannot make changes to your expenses or income. You can update or modify them on the respective pages. Let me know if you'd like help with anything else!"
-    If the user asks about **yourself**, simply respond:
-    "I am FinBot, a financial assistant built by Sakshi & Shahu to help with budgeting and expense management."""
+class FinFlowBot:
 
-    response = co.generate(
-        model='command-xlarge-nightly',  
-        prompt=prompt,
-        max_tokens=100
-    )
+    def __init__(self):
+        self.client = genai.Client(
+                vertexai=True, project='hack-team-finfluenzers', location='us-central1'
+            )
+
+    def call_ai(self,prompt):
+
+        response = self.client.models.generate_content(
+                model="gemini-2.5-flash", contents=prompt
+            )
     
-    # Return the response from Cohere API
-    return response.generations[0].text.strip()
+        return response
+    
+    def textToSpeech(self,text):
+        if text.strip():
+            tts = gTTS(text)
+            filename = f"speech_{uuid.uuid4().hex}.mp3"
+            tts.save(filename)
+
+            # Read the file and encode to base64
+            with open(filename, "rb") as audio_file:
+                audio_bytes = audio_file.read()
+                b64 = base64.b64encode(audio_bytes).decode()
+
+            # Autoplay using HTML audio tag
+            audio_html = f"""
+            <audio autoplay controls>
+                <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+                Your browser does not support the audio element.
+            </audio>
+            """
+            components.html(audio_html, height=80)
+
+            os.remove(filename)
+
+
+
+
+
