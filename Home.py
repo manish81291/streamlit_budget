@@ -68,7 +68,7 @@ try:
         else:
             Authenticator.logout(location='sidebar')
             st.header(f'Welcome to FinFlow :green[*{st.session_state.get("username").capitalize()}*] 👤 \n :orange[*An AI assisted budgeting and Literacy tool!*] 😊',divider='gray')
-
+            
             account = Account(username=st.session_state.get('username'))
             df_income = account.incomeList()
             df_expense = account.expenseList()
@@ -132,7 +132,7 @@ try:
                     st.plotly_chart(fig)
 
                 with col2:
-                    if st.button("💡Generate Insight"):
+                    if st.button("💡Generate Insight",key='gi1'):
                         with st.spinner("Thinking with Gemini..."):
                             df_income_chat = account.incomeList()
                             df_expense_chat = account.expenseList()
@@ -150,18 +150,19 @@ try:
 
 
                             response = finbot.call_ai(summarise_prompt)
-
-                            st.write(response.text)
+                            st.markdown(response.text)
+                            finbot.textToSpeech(response.text)
                 
 
                 budget = account.BudgetManager.viewBudget()
                 # if not budget.empty:
                 #     pass
                 #     #calculate Monthly expense by category and see if ar espendign more than budget
-                    
+                st.divider()
                 if not df_expense.empty and not df_income.empty and not budget.empty:
 
-                    # Ensure proper datetime
+
+                        # Ensure proper datetime
                     df_expense['date'] = pd.to_datetime(df_expense['date'])
                     df_income['date'] = pd.to_datetime(df_income['date'])
 
@@ -207,7 +208,7 @@ try:
 
                     # 📝 Summary message
                     st.markdown(f"""
-                    ### 📊 Summary for **{selected_category}**
+                    ##### 📊 Summary for **{selected_category}**
                     - 🔸 **Total Budgeted**: ₹{total_budget:,.2f}
                     - 🔹 **Total Spent**: ₹{total_actual:,.2f}
                     - {"🟢 Under budget" if diff < 0 else "🔴 Over budget"} by ₹{abs(diff):,.2f} ({percent_diff:+.1f}%)
@@ -246,7 +247,38 @@ try:
                             yshift=10
                         )
 
-                    st.plotly_chart(fig, use_container_width=True)
+                    col5, col6 = st.columns([2,1])
+
+                    with col5:
+                        st.plotly_chart(fig, use_container_width=True)
+                    with col6:
+                        if st.button("💡Generate Insight",key='gi2'):
+                            with st.spinner("Thinking with Gemini..."):
+                                df_expense_chat = account.expenseList()
+                                df_budget_chat = account.BudgetManager.viewBudget()
+                                df_budget_chat = df_budget_chat[['budget_str','short_term_goal','long_term_goal']]
+                                df_budget_chat.columns = ['Maximum Expense budget','short term goal','long term goal']
+
+
+                                parent_prompt = """I have monthly expense ("Cash Out") and Budget Allocation data for the past 12 months.
+                                
+                                Here is the data in JSON format:
+                                Cash Out: {}
+                                Budget Allocation: 
+
+                                """.format(df_expense_chat.to_json(),df_budget_chat.iloc[0].to_json())
+
+                                summarise_prompt= parent_prompt+"""
+                                    Please perform the following analysis:
+                                    1. Do not provide the data in response 
+                                    2. Analyze {} expense category specifically, providing details on its actual spending, its allocated budget, and the variance (over or under budget), percentage average  monthly increase over for the past 12 months. Identify any trends or notable spikes/drops in spending within this category.
+                                    3. Summarize in not more than 3 points, make sure there is no formatting issue""".format(selected_category)
+
+
+
+                                response = finbot.call_ai(summarise_prompt)
+                                st.markdown(response.text)
+                                finbot.textToSpeech(response.text)
 
 
                     

@@ -66,13 +66,36 @@ if "history" not in st.session_state:
 for role, message in st.session_state.history:
     st.chat_message(role).markdown(message)
 
-df_income = account.incomeList()
-df_expense = account.expenseList()
-df_profile = account.ProfileManager.viewProfile()
-df_budget = account.BudgetManager.viewBudget()
+df_income_chat = account.incomeList()
+df_expense_chat = account.expenseList()
+df_profile_chat = account.ProfileManager.viewProfile()
+df_profile_chat = df_profile_chat[['business_type','business_open_date','business_size','business_location']]
+df_profile_chat.columns = ['business type','business open date','business size','business location']
+
+df_budget_chat = account.BudgetManager.viewBudget()
+df_budget_chat = df_budget_chat[['budget_str','short_term_goal','long_term_goal']]
+df_budget_chat.columns = ['Maximum Expense budget','short term goal','long term goal']
+
+
+parent_prompt = """I have monthly income ("Cash In"), expense ("Cash Out") , business profile ("Business Information") and Budget Allocation data for the past 12 months.
+
+                Here is the data in JSON format:
+                Cash In: {}
+                Cash Out: {}
+                Business Information: {}
+                Budget Allocation: {}
+
+                You are a financial bot. Do not do anything now, just same the data for next prompt to come.
+                """.format(df_income_chat.to_json(),df_expense_chat.to_json(),df_profile_chat.iloc[0].to_json(),df_budget_chat.iloc[0].to_json())
+
+with st.spinner("Setting up FinFlow Bot..."): 
+    response = chat.send_message(parent_prompt)
+    # st.markdown(response.text)
+    st.session_state.history.append(("assistant", response.text))
 
 # Chat input
 if prompt := st.chat_input("Type your message..."):
+    
     # Show user message
     st.chat_message("user").markdown(prompt)
     st.session_state.history.append(("user", prompt))

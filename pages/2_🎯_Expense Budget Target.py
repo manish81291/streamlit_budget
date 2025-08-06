@@ -3,6 +3,7 @@ from utils.accountManager import Account
 import time  
 from auth import AuthManager
 from streamlit_option_menu import option_menu
+from utils.finbot import FinFlowBot
 
 st.set_page_config(page_title='Budget Target', page_icon='')
 st.logo('img/logo.png',size='large')
@@ -13,6 +14,7 @@ st.markdown("""
                     padding-bottom: 0rem;
                     padding-left: 0rem;
                     padding-right: 0rem;
+                    max-width: 80%;
                 }
             h2 {
                         padding: 0 !important;
@@ -23,6 +25,7 @@ st.markdown("""
         </style>
         """, unsafe_allow_html=True)
 
+finbot  = FinFlowBot()
 auth = AuthManager()
 users = auth.fetch_users()
 Authenticator = auth.get_authenticatar(users)
@@ -71,31 +74,66 @@ if not budget.empty:
 if selected == "Expense Budget Target":
     st.write(':red[Expense Budget Target]')
 
-    with st.form("budget_form"):
-        budget_var = {}
+    col1, col2 = st.columns([3,2])
 
-        for x in df_out['category'].tolist():
-            budget_var[x] = st.slider(
-                                label=f"{x} in %".format(x),
-                                min_value=0,  # Minimum value
-                                max_value=100,  # Maximum value
-                                value= budget_str_val[x] if x in budget_str_val else 0,  # Default value
-                                step=1  # Step size
-                            )
+    with col1:
 
-        short_term_goal = st.text_input("Short Term Goal", value=short_term_goal)
-        long_term_goal = st.text_input("Long Term Goal", value=long_term_goal)
-        submit_budget = st.form_submit_button("Update Budget Target")
-        if submit_budget:
-            if sum(list(budget_var.values())) > 100:
-                st.toast("Sum of all the Expense Budget target is greater than 100% of average Cash In",icon="⚠️")
-            if not budget.empty:
-                account.BudgetManager.updateBudget(str(budget_var), short_term_goal, long_term_goal)
-            else:
-                account.BudgetManager.addBudget(str(budget_var), short_term_goal, long_term_goal)
-            st.toast("✅ Budget updated successfully!")
-            time.sleep(2)  
-            st.rerun()
+        with st.form("budget_form"):
+            budget_var = {}
+
+            for x in df_out['category'].tolist():
+                budget_var[x] = st.slider(
+                                    label=f"{x} in %".format(x),
+                                    min_value=0,  # Minimum value
+                                    max_value=100,  # Maximum value
+                                    value= budget_str_val[x] if x in budget_str_val else 0,  # Default value
+                                    step=1  # Step size
+                                )
+
+            short_term_goal = st.text_input("Short Term Goal", value=short_term_goal)
+            long_term_goal = st.text_input("Long Term Goal", value=long_term_goal)
+            submit_budget = st.form_submit_button("Update Budget Target")
+            if submit_budget:
+                if sum(list(budget_var.values())) > 100:
+                    st.toast("Sum of all the Expense Budget target is greater than 100% of average Cash In",icon="⚠️")
+                if not budget.empty:
+                    account.BudgetManager.updateBudget(str(budget_var), short_term_goal, long_term_goal)
+                else:
+                    account.BudgetManager.addBudget(str(budget_var), short_term_goal, long_term_goal)
+                st.toast("✅ Budget updated successfully!")
+                time.sleep(2)  
+                st.rerun()
+    with col2:
+        if st.button("💡Generate Budgeting recommendation",key='gi3'):
+            with st.spinner("Thinking with Gemini..."):
+                df_profile_chat = account.ProfileManager.viewProfile()
+                df_profile_chat = df_profile_chat[['business_type','business_open_date','business_size','business_location']]
+                df_profile_chat.columns = ['business type','business open date','business size','business location']
+
+                df_budget_chat = account.BudgetManager.viewBudget()
+                df_budget_chat = df_budget_chat[['budget_str','short_term_goal','long_term_goal']]
+                df_budget_chat.columns = ['Maximum Expense budget','short term goal','long term goal']
+
+
+                parent_prompt = """I have business profile ("Business Information") and Budget Allocation data for my business.
+
+                Here is the data in JSON format:
+                Business Information: {}
+                Budget Allocation: {}
+
+                """.format(df_profile_chat.iloc[0].to_json(),df_budget_chat.iloc[0].to_json())
+
+                summarise_prompt= parent_prompt+"""
+                Please perform the following analysis:
+                1. Make sure profit margin of the industry is considered you deduct that before budgeting recommendation.
+                2. Based on the business information provided, short and long term plan, what is the recommended budget allocation. Give allocation in percentage only for categories present in expense.
+                3. Don't provide response in more than 100 words."""
+
+
+
+                response = finbot.call_ai(summarise_prompt)
+                st.markdown(response.text)
+                finbot.textToSpeech(response.text)
 
 if selected == "Add Expense Category":
     df_out['category_new'] = df_out.category.apply(lambda x: ':red-badge['+x+']')
